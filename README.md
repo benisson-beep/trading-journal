@@ -10,3 +10,7 @@ A professional trading journal web application — built as a long-term learning
 
 ## Status
 🚧 In active development — currently in Phase 0 (project setup).(27/july/2026)
+
+
+
+
