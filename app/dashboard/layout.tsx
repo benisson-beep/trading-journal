@@ -18,7 +18,7 @@ export default async function DashboardLayout({
       <header className="flex items-center justify-between border-b border-gray-800 px-8 py-4">
         <h1 className="text-xl font-bold">Trading Journal</h1>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-400">{session.user.email}</span>
+          <span className="text-sm text-gray-400">{session.user.name}</span>
           <form
             action={async () => {
               "use server";
