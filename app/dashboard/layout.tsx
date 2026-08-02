@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,17 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-black text-white">
       <header className="flex items-center justify-between border-b border-gray-800 px-8 py-4">
-        <h1 className="text-xl font-bold">Trading Journal</h1>
+        <div className="flex items-center gap-6">
+  <h1 className="text-xl font-bold">Trading Journal</h1>
+  <nav className="flex gap-4">
+    <Link href="/dashboard" className="text-sm text-gray-400 hover:text-white">
+      Dashboard
+    </Link>
+    <Link href="/dashboard/trades" className="text-sm text-gray-400 hover:text-white">
+      Trades
+    </Link>
+  </nav>
+</div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400">{session.user.name}</span>
           <form
