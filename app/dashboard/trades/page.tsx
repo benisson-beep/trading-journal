@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { deleteTrade } from "./actions";
+import { calculatePnl } from "@/lib/trade-utils";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -47,15 +48,10 @@ export default async function TradesPage() {
           </thead>
           <tbody>
             {trades.map((trade) => {
-              const entry = Number(trade.entryPrice);
-              const exit = Number(trade.exitPrice);
-              const fees = Number(trade.fees);
-             const quantity = Number(trade.quantity);
-             const contractSize = Number(trade.contractSize);
-             const pnl =
-             trade.direction === "LONG"
-             ? (exit - entry) * quantity * contractSize - fees
-             :(entry - exit) * quantity * contractSize - fees;
+               const entry = Number(trade.entryPrice);
+               const exit = Number(trade.exitPrice);
+               const quantity = Number(trade.quantity);
+               const pnl = calculatePnl(trade);
 
               return (
                 <tr key={trade.id} className="border-b border-gray-900">
