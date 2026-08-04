@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
 import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { deleteTrade } from "./actions";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -41,6 +42,7 @@ export default async function TradesPage() {
               <th className="py-2">Exit</th>
               <th className="py-2">Qty</th>
               <th className="py-2">P&L</th>
+              <th className="py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -68,6 +70,18 @@ export default async function TradesPage() {
                   >
                     {pnl >= 0 ? "+" : ""}
                     {pnl.toFixed(2)}
+                  </td>
+                  <td className="py-2 flex gap-2">
+                   <Link href={`/dashboard/trades/${trade.id}/edit`}>
+                   <Button variant="outline" size="sm">
+                      Edit
+                    </Button>
+                  </Link>
+                  <form action={deleteTrade.bind(null, trade.id)}>
+                    <Button type="submit" variant="destructive" size="sm">
+                     Delete
+                     </Button>
+                  </form>
                   </td>
                 </tr>
               );
