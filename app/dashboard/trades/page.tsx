@@ -62,7 +62,7 @@ export default async function TradesPage() {
                   <td className="py-2">{trade.direction}</td>
                   <td className="py-2">{entry.toFixed(2)}</td>
                   <td className="py-2">{exit.toFixed(2)}</td>
-                  <td className="py-2">{trade.quantity}</td>
+                  <td className="py-2">{quantity}</td>
                   <td
                     className={`py-2 ${pnl >= 0 ? "text-green-500" : "text-red-500"}`}
                   >
