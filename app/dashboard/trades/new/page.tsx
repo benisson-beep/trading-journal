@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createTrade } from "../actions";
 
 export default function NewTradePage() {
   return (
     <div className="max-w-md">
       <h2 className="text-2xl font-bold mb-6">Add Trade</h2>
-      <form className="space-y-4">
+      <form action={createTrade} className="space-y-4">
         <div>
           <Label htmlFor="symbol">Symbol</Label>
           <Input id="symbol" name="symbol" placeholder="AAPL" required />
