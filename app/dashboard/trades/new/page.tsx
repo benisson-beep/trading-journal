@@ -38,7 +38,12 @@ export default function NewTradePage() {
 
         <div>
           <Label htmlFor="quantity">Quantity</Label>
-          <Input id="quantity" name="quantity" type="number" required />
+          <Input id="quantity" name="quantity" type="number"  step="0.01" defaultValue="0.01" required />
+        </div>
+
+        <div>
+          <Label htmlFor="contractSize">Contract size (multiplier)</Label>
+          <Input id="contractSize" name="contractSize" type="number" step="0.01" defaultValue="1" />
         </div>
 
         <div>

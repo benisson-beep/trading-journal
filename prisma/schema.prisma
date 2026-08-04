@@ -28,7 +28,8 @@ model Trade {
   direction   Direction
   entryPrice  Decimal
   exitPrice   Decimal
-  quantity    Int
+  quantity    Decimal
+  contractSize Decimal @default(1)
   fees        Decimal
   date        DateTime
 

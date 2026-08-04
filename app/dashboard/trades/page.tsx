@@ -48,10 +48,12 @@ export default async function TradesPage() {
               const entry = Number(trade.entryPrice);
               const exit = Number(trade.exitPrice);
               const fees = Number(trade.fees);
-              const pnl =
-                trade.direction === "LONG"
-                  ? (exit - entry) * trade.quantity - fees
-                  : (entry - exit) * trade.quantity - fees;
+             const quantity = Number(trade.quantity);
+             const contractSize = Number(trade.contractSize);
+             const pnl =
+             trade.direction === "LONG"
+             ? (exit - entry) * quantity * contractSize - fees
+             :(entry - exit) * quantity * contractSize - fees;
 
               return (
                 <tr key={trade.id} className="border-b border-gray-900">
