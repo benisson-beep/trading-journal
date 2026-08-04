@@ -69,8 +69,8 @@ export default async function TradesPage() {
                   </td>
                   <td className="py-2 flex gap-2">
                    <Link href={`/dashboard/trades/${trade.id}/edit`}>
-                   <Button variant="outline" size="sm">
-                      Edit
+                   <Button variant="outline" size="sm" className="bg-black text-white border-gray-700 hover:bg-gray-800">
+                     Edit
                     </Button>
                   </Link>
                   <form action={deleteTrade.bind(null, trade.id)}>

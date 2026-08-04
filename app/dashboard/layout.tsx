@@ -36,8 +36,8 @@ export default async function DashboardLayout({
               await signOut();
             }}
           >
-            <Button type="submit" variant="outline" size="sm">
-              Sign out
+            <Button type="submit" variant="outline" size="sm" className="bg-black text-white border-gray-700 hover:bg-gray-800">
+            Sign out
             </Button>
           </form>
         </div>
