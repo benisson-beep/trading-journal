@@ -20,3 +20,56 @@ export function calculatePnl(trade: TradeForCalc): number {
     ? (exit - entry) * quantity * contractSize - fees
     : (entry - exit) * quantity * contractSize - fees;
 }
+
+export type TradeStats = {
+  totalTrades: number;
+  netPnl: number;
+  grossProfit: number;
+  grossLoss: number;
+  winRate: number;
+  profitFactor: number;
+  avgWin: number;
+  avgLoss: number;
+  riskReward: number;
+  expectancy: number;
+};
+
+export function calculateStats(trades: TradeForCalc[]): TradeStats {
+  const pnls = trades.map(calculatePnl);
+
+  const totalTrades = pnls.length;
+  const netPnl = pnls.reduce((sum, pnl) => sum + pnl, 0);
+
+  const wins = pnls.filter((pnl) => pnl > 0);
+  const losses = pnls.filter((pnl) => pnl < 0);
+
+  const grossProfit = wins.reduce((sum, pnl) => sum + pnl, 0);
+  const grossLoss = losses.reduce((sum, pnl) => sum + pnl, 0);
+
+  const winRate = totalTrades > 0 ? (wins.length / totalTrades) * 100 : 0;
+  const lossRate = totalTrades > 0 ? (losses.length / totalTrades) * 100 : 0;
+
+  const avgWin = wins.length > 0 ? grossProfit / wins.length : 0;
+  const avgLoss = losses.length > 0 ? grossLoss / losses.length : 0;
+
+  const profitFactor =
+    grossLoss !== 0 ? grossProfit / Math.abs(grossLoss) : 0;
+
+  const riskReward = avgLoss !== 0 ? avgWin / Math.abs(avgLoss) : 0;
+
+  const expectancy =
+    (winRate / 100) * avgWin - (lossRate / 100) * Math.abs(avgLoss);
+
+  return {
+    totalTrades,
+    netPnl,
+    grossProfit,
+    grossLoss,
+    winRate,
+    profitFactor,
+    avgWin,
+    avgLoss,
+    riskReward,
+    expectancy,
+  };
+}

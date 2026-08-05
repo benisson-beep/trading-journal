@@ -61,7 +61,7 @@ export default async function EditTradePage({
             id="entryPrice"
             name="entryPrice"
             type="number"
-            step="0.01"
+            step="0.001"
             defaultValue={trade.entryPrice.toString()}
             required
           />
@@ -85,7 +85,7 @@ export default async function EditTradePage({
             id="quantity"
             name="quantity"
             type="number"
-            step="0.01"
+            step="0.001"
             defaultValue={trade.quantity.toString()}
             required
           />
