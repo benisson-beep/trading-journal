@@ -73,3 +73,23 @@ export function calculateStats(trades: TradeForCalc[]): TradeStats {
     expectancy,
   };
 }
+
+
+type TradeWithDate = TradeForCalc & { date: Date };
+
+export type EquityPoint = {
+  date: string;
+  equity: number;
+};
+
+export function calculateEquityCurve(trades: TradeWithDate[]): EquityPoint[] {
+  let runningTotal = 0;
+
+  return trades.map((trade) => {
+    runningTotal += calculatePnl(trade);
+    return {
+      date: trade.date.toLocaleDateString(),
+      equity: runningTotal,
+    };
+  });
+}

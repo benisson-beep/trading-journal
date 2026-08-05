@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { calculateStats } from "@/lib/trade-utils";
+import { calculateEquityCurve } from "@/lib/trade-utils";
+import { EquityCurveChart } from "@/components/charts/equity-curve-chart";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -19,6 +21,7 @@ export default async function AnalyticsPage() {
   });
 
   const stats = calculateStats(trades);
+  const equityCurve = calculateEquityCurve(trades);
 
   const cards = [
     { label: "Total Trades", value: stats.totalTrades.toString() },
@@ -53,6 +56,10 @@ export default async function AnalyticsPage() {
             </div>
           );
         })}
+        <div className="mt-8">
+  <h3 className="text-lg font-semibold mb-4">Equity Curve</h3>
+  <EquityCurveChart data={equityCurve} />
+</div>
       </div>
     </div>
   );
