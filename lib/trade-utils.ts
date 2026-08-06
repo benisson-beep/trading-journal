@@ -1,4 +1,4 @@
-import { Decimal } from "@/lib/generated/prisma/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 
 type TradeForCalc = {
   direction: "LONG" | "SHORT";
@@ -92,4 +92,38 @@ export function calculateEquityCurve(trades: TradeWithDate[]): EquityPoint[] {
       equity: runningTotal,
     };
   });
+}
+
+type TradeWithDateAndId = TradeForCalc & { date: Date; id: string };
+
+export type DailyPerformance = {
+  date: string;
+  pnl: number;
+  tradeCount: number;
+};
+
+export function calculateDailyPerformance(
+  trades: TradeWithDateAndId[]
+): Map<string, DailyPerformance> {
+  const dailyMap = new Map<string, DailyPerformance>();
+
+  for (const trade of trades) {
+    const dateKey = trade.date.toISOString().split("T")[0];
+    const pnl = calculatePnl(trade);
+
+    const existing = dailyMap.get(dateKey);
+
+    if (existing) {
+      existing.pnl += pnl;
+      existing.tradeCount += 1;
+    } else {
+      dailyMap.set(dateKey, {
+        date: dateKey,
+        pnl,
+        tradeCount: 1,
+      });
+    }
+  }
+
+  return dailyMap;
 }
