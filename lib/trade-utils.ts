@@ -23,6 +23,8 @@ export function calculatePnl(trade: TradeForCalc): number {
 
 export type TradeStats = {
   totalTrades: number;
+  winCount: number;
+  lossCount: number;
   netPnl: number;
   grossProfit: number;
   grossLoss: number;
@@ -62,6 +64,8 @@ export function calculateStats(trades: TradeForCalc[]): TradeStats {
 
   return {
     totalTrades,
+     winCount: wins.length,
+    lossCount: losses.length,
     netPnl,
     grossProfit,
     grossLoss,
@@ -127,3 +131,5 @@ export function calculateDailyPerformance(
 
   return dailyMap;
 }
+
+
