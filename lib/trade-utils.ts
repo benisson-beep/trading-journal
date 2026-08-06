@@ -133,3 +133,37 @@ export function calculateDailyPerformance(
 }
 
 
+export type MonthlyPerformance = {
+  month: string;
+  pnl: number;
+  tradeCount: number;
+};
+
+export function calculateMonthlyPerformance(
+  trades: TradeWithDateAndId[]
+): MonthlyPerformance[] {
+  const monthlyMap = new Map<string, MonthlyPerformance>();
+
+  for (const trade of trades) {
+    const monthKey = trade.date.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+    const pnl = calculatePnl(trade);
+
+    const existing = monthlyMap.get(monthKey);
+
+    if (existing) {
+      existing.pnl += pnl;
+      existing.tradeCount += 1;
+    } else {
+      monthlyMap.set(monthKey, {
+        month: monthKey,
+        pnl,
+        tradeCount: 1,
+      });
+    }
+  }
+
+  return Array.from(monthlyMap.values());
+}

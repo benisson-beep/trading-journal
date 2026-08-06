@@ -7,6 +7,8 @@ import { EquityCurveChart } from "@/components/charts/equity-curve-chart";
 import { calculateDailyPerformance } from "@/lib/trade-utils";
 import { PerformanceCalendar } from "@/components/charts/performance-calendar";
 import { WinLossPieChart } from "@/components/charts/win-loss-pie-chart";
+import { calculateMonthlyPerformance } from "@/lib/trade-utils";
+import { MonthlyPerformanceChart } from "@/components/charts/monthly-performance-chart";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -26,6 +28,7 @@ export default async function AnalyticsPage() {
   const stats = calculateStats(trades);
   const equityCurve = calculateEquityCurve(trades);
   const dailyPerformance = calculateDailyPerformance(trades);
+  const monthlyPerformance = calculateMonthlyPerformance(trades);
 
   const cards = [
     { label: "Total Trades", value: stats.totalTrades.toString() },
@@ -69,6 +72,10 @@ export default async function AnalyticsPage() {
       <div className="mt-8">
          <h3 className="text-lg font-semibold mb-4">Win / Loss</h3>
          <WinLossPieChart winCount={stats.winCount} lossCount={stats.lossCount} />
+      </div>
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-4">Monthly Performance</h3>
+        <MonthlyPerformanceChart data={monthlyPerformance} />
       </div>
 
       <div className="mt-8">
