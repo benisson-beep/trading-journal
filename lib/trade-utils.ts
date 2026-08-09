@@ -1,4 +1,4 @@
-import { Prisma } from "@/lib/generated/prisma/client";
+import { Decimal } from "@/lib/generated/prisma/client";
 
 type TradeForCalc = {
   direction: "LONG" | "SHORT";
@@ -112,7 +112,13 @@ export function calculateDailyPerformance(
   const dailyMap = new Map<string, DailyPerformance>();
 
   for (const trade of trades) {
-    const dateKey = trade.date.toISOString().split("T")[0];
+    const date = new Date(trade.date);
+
+if (isNaN(date.getTime())) {
+  continue;
+}
+
+const dateKey = date.toISOString().split("T")[0];
     const pnl = calculatePnl(trade);
 
     const existing = dailyMap.get(dateKey);

@@ -17,9 +17,11 @@ model User {
   name  String?
 
   trades Trade[]
+  tags   Tag[]
 }
 
 model Trade {
+  tags Tag[]
   id     String @id @default(cuid())
   userId String
   user   User   @relation(fields: [userId], references: [id])
@@ -39,4 +41,15 @@ model Trade {
 enum Direction {
   LONG
   SHORT
+}
+
+model Tag {
+  id     String @id @default(cuid())
+  name   String
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  trades Trade[]
+
+  @@unique([userId, name])
 }

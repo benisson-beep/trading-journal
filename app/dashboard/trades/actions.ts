@@ -21,6 +21,10 @@ export async function createTrade(formData: FormData) {
     throw new Error("User not found");
   }
 
+  const tagInput = formData.get("tags") as string;
+  const tagNames = tagInput ? tagInput.split(",").map((t) => t.trim()).filter(Boolean) : [];
+  const tagIds = await getOrCreateTags(user.id, tagNames);
+
   await prisma.trade.create({
     data: {
       userId: user.id,
@@ -32,6 +36,9 @@ export async function createTrade(formData: FormData) {
       contractSize: formData.get("contractSize") as string,
       fees: formData.get("fees") as string,
       date: new Date(formData.get("date") as string),
+      tags: {
+        connect: tagIds.map((id) => ({ id })),
+      },
     },
   });
 
@@ -71,8 +78,19 @@ export async function updateTrade(tradeId: string, formData: FormData) {
     throw new Error("User not found");
   }
 
-  await prisma.trade.updateMany({
+  const existingTrade = await prisma.trade.findFirst({
     where: { id: tradeId, userId: user.id },
+  });
+  if (!existingTrade) {
+    throw new Error("Trade not found or not authorized");
+  }
+
+  const tagInput = formData.get("tags") as string;
+  const tagNames = tagInput ? tagInput.split(",").map((t) => t.trim()).filter(Boolean) : [];
+  const tagIds = await getOrCreateTags(user.id, tagNames);
+
+  await prisma.trade.update({
+    where: { id: tradeId },
     data: {
       symbol: formData.get("symbol") as string,
       direction: formData.get("direction") as "LONG" | "SHORT",
@@ -82,8 +100,40 @@ export async function updateTrade(tradeId: string, formData: FormData) {
       contractSize: formData.get("contractSize") as string,
       fees: formData.get("fees") as string,
       date: new Date(formData.get("date") as string),
+      tags: {
+        set: [],
+        connect: tagIds.map((id) => ({ id })),
+      },
     },
   });
 
   redirect("/dashboard/trades");
 }
+
+export async function getOrCreateTags(userId: string, tagNames: string[]) {
+  const tagIds: string[] = [];
+
+  for (const name of tagNames) {
+    const trimmed = name.trim().toLowerCase();
+    if (!trimmed) continue;
+
+    const tag = await prisma.tag.upsert({
+      where: { userId_name: { userId, name: trimmed } },
+      update: {},
+      create: { userId, name: trimmed },
+    });
+
+    tagIds.push(tag.id);
+  }
+
+  return tagIds;
+}
+
+export async function getUserTags(userId: string) {
+  return prisma.tag.findMany({
+    where: { userId },
+    orderBy: { name: "asc" },
+  });
+}
+
+updateTrade

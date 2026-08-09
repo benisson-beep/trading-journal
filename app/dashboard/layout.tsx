@@ -26,6 +26,9 @@ export default async function DashboardLayout({
     <Link href="/dashboard/trades" className="text-sm text-gray-400 hover:text-white">
       Trades
     </Link>
+    <Link href="/dashboard/analytics" className="text-sm text-gray-400 hover:text-white">
+      Analytics
+    </Link>
   </nav>
 </div>
         <div className="flex items-center gap-4">

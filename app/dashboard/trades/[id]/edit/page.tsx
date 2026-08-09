@@ -23,8 +23,9 @@ export default async function EditTradePage({
   });
 
   const trade = await prisma.trade.findFirst({
-    where: { id, userId: user!.id },
-  });
+  where: { id, userId: user!.id },
+  include: { tags: true },
+});
 
   if (!trade) {
     notFound();
@@ -61,7 +62,7 @@ export default async function EditTradePage({
             id="entryPrice"
             name="entryPrice"
             type="number"
-            step="0.001"
+            step="0.00001"
             defaultValue={trade.entryPrice.toString()}
             required
           />
@@ -73,7 +74,7 @@ export default async function EditTradePage({
             id="exitPrice"
             name="exitPrice"
             type="number"
-            step="0.01"
+            step="0.00001"
             defaultValue={trade.exitPrice.toString()}
             required
           />
@@ -123,9 +124,19 @@ export default async function EditTradePage({
             required
           />
         </div>
+        <div>
+         <Label htmlFor="tags">Tags (comma-separated)</Label>
+        <Input
+          id="tags"
+          name="tags"
+          placeholder="breakout, high-conviction"
+          defaultValue={trade.tags.map((t) => t.name).join(", ")}
+         />
+        </div>
 
         <Button type="submit">Save Changes</Button>
       </form>
     </div>
   );
 }
+

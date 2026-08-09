@@ -12,7 +12,6 @@ export default function NewTradePage() {
           <Label htmlFor="symbol">Symbol</Label>
           <Input id="symbol" name="symbol" placeholder="AAPL" required />
         </div>
-
         <div>
           <Label htmlFor="direction">Direction</Label>
           <select
@@ -25,37 +24,34 @@ export default function NewTradePage() {
             <option value="SHORT">Short</option>
           </select>
         </div>
-
         <div>
           <Label htmlFor="entryPrice">Entry price</Label>
-          <Input id="entryPrice" name="entryPrice" type="number" step="0.01" required />
+          <Input id="entryPrice" name="entryPrice" type="number" step="0.00001" required />
         </div>
-
         <div>
           <Label htmlFor="exitPrice">Exit price</Label>
-          <Input id="exitPrice" name="exitPrice" type="number" step="0.01" required />
+          <Input id="exitPrice" name="exitPrice" type="number" step="0.00001" required />
         </div>
-
         <div>
           <Label htmlFor="quantity">Quantity</Label>
-          <Input id="quantity" name="quantity" type="number"  step="0.01" defaultValue="0.01" required />
+          <Input id="quantity" name="quantity" type="number" step="0.01" defaultValue="0.01" required />
         </div>
-
         <div>
           <Label htmlFor="contractSize">Contract size (multiplier)</Label>
           <Input id="contractSize" name="contractSize" type="number" step="0.01" defaultValue="1" />
         </div>
-
         <div>
           <Label htmlFor="fees">Fees</Label>
           <Input id="fees" name="fees" type="number" step="0.01" defaultValue="0" />
         </div>
-
         <div>
           <Label htmlFor="date">Date</Label>
           <Input id="date" name="date" type="date" required />
         </div>
-
+        <div>
+          <Label htmlFor="tags">Tags (comma-separated)</Label>
+          <Input id="tags" name="tags" placeholder="breakout, high-conviction" />
+        </div>
         <Button type="submit">Save Trade</Button>
       </form>
     </div>

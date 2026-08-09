@@ -18,7 +18,7 @@ export default async function TradesPage() {
 
   const trades = await prisma.trade.findMany({
     where: { userId: user!.id },
-    orderBy: { date: "desc" },
+    orderBy: { date: "desc" },    include: { tags: true },
   });
 
   return (
@@ -38,6 +38,7 @@ export default async function TradesPage() {
             <tr className="border-b border-gray-800 text-gray-400">
               <th className="py-2">Date</th>
               <th className="py-2">Symbol</th>
+              <th className="py-2">Tags</th>
               <th className="py-2">Direction</th>
               <th className="py-2">Entry</th>
               <th className="py-2">Exit</th>
@@ -57,6 +58,11 @@ export default async function TradesPage() {
                 <tr key={trade.id} className="border-b border-gray-900">
                   <td className="py-2">{trade.date.toLocaleDateString()}</td>
                   <td className="py-2">{trade.symbol}</td>
+                  <td className="py-2">{trade.tags.map((tag) => (<span
+                  key={tag.id}className="inline-block bg-gray-800 text-gray-300 text-xs px-2 py-0.5 rounded mr-1">
+                  {tag.name}</span>
+                  ))}
+                  </td>
                   <td className="py-2">{trade.direction}</td>
                   <td className="py-2">{entry.toFixed(2)}</td>
                   <td className="py-2">{exit.toFixed(2)}</td>
