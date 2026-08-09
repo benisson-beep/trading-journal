@@ -49,6 +49,15 @@ export default function NewTradePage() {
           <Input id="date" name="date" type="date" required />
         </div>
         <div>
+        <div>
+         <Label htmlFor="notes">Notes</Label>
+          <textarea
+           id="notes"
+          name="notes"
+          rows={3}
+          className="w-full rounded-md border border-gray-700 bg-black px-3 py-2 text-white"
+          placeholder="What was your setup, reasoning, or lesson learned?"/>
+        </div>
           <Label htmlFor="tags">Tags (comma-separated)</Label>
           <Input id="tags" name="tags" placeholder="breakout, high-conviction" />
         </div>

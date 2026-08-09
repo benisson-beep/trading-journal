@@ -133,6 +133,16 @@ export default async function EditTradePage({
           defaultValue={trade.tags.map((t) => t.name).join(", ")}
          />
         </div>
+        <div>
+  <Label htmlFor="notes">Notes</Label>
+  <textarea
+    id="notes"
+    name="notes"
+    rows={3}
+    className="w-full rounded-md border border-gray-700 bg-black px-3 py-2 text-white"
+    defaultValue={trade.notes ?? ""}
+  />
+</div>
 
         <Button type="submit">Save Changes</Button>
       </form>

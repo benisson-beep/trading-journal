@@ -36,6 +36,7 @@ export async function createTrade(formData: FormData) {
       contractSize: formData.get("contractSize") as string,
       fees: formData.get("fees") as string,
       date: new Date(formData.get("date") as string),
+      notes: formData.get("notes") as string,
       tags: {
         connect: tagIds.map((id) => ({ id })),
       },
@@ -100,6 +101,7 @@ export async function updateTrade(tradeId: string, formData: FormData) {
       contractSize: formData.get("contractSize") as string,
       fees: formData.get("fees") as string,
       date: new Date(formData.get("date") as string),
+      notes: formData.get("notes") as string,
       tags: {
         set: [],
         connect: tagIds.map((id) => ({ id })),
@@ -136,4 +138,3 @@ export async function getUserTags(userId: string) {
   });
 }
 
-updateTrade

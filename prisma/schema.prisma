@@ -34,6 +34,7 @@ model Trade {
   contractSize Decimal @default(1)
   fees        Decimal
   date        DateTime
+  notes       String?
 
   createdAt DateTime @default(now())
 }
