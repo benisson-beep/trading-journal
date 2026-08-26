@@ -10,6 +10,27 @@ import { revalidatePath } from "next/cache";
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+async function saveScreenshot(userId: string, tradeId: string, formData: FormData) {
+  const file = formData.get("screenshot") as File | null;
+  if (!file || file.size === 0) return; // no screenshot selected — skip silently
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const storagePath = `${userId}/${tradeId}-${file.name}`;
+
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from("trade-screenshots")
+    .upload(storagePath, buffer, { contentType: file.type, upsert: true });
+
+  if (uploadError) {
+    throw new Error(`Upload failed: ${uploadError.message}`);
+  }
+
+  await prisma.trade.update({
+    where: { id: tradeId },
+    data: { screenshotPath: storagePath },
+  });
+}
+
 export async function createTrade(formData: FormData) {
   const session = await auth();
   if (!session?.user?.email) {
@@ -27,7 +48,7 @@ export async function createTrade(formData: FormData) {
   const tagNames = tagInput ? tagInput.split(",").map((t) => t.trim()).filter(Boolean) : [];
   const tagIds = await getOrCreateTags(user.id, tagNames);
 
-  await prisma.trade.create({
+  const newTrade = await prisma.trade.create({
     data: {
       userId: user.id,
       symbol: formData.get("symbol") as string,
@@ -44,6 +65,8 @@ export async function createTrade(formData: FormData) {
       },
     },
   });
+
+  await saveScreenshot(user.id, newTrade.id, formData);
 
   redirect("/dashboard/trades");
 }
@@ -111,6 +134,8 @@ export async function updateTrade(tradeId: string, formData: FormData) {
     },
   });
 
+  await saveScreenshot(user.id, tradeId, formData);
+
   redirect("/dashboard/trades");
 }
 
@@ -142,41 +167,25 @@ export async function getUserTags(userId: string) {
 
 export async function uploadScreenshot(tradeId: string, formData: FormData) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!session?.user?.email) {
     throw new Error("Not authenticated");
   }
 
-  // Verify the trade belongs to this user before doing anything else
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+  });
+  if (!user) {
+    throw new Error("User not found");
+  }
+
   const trade = await prisma.trade.findFirst({
-    where: { id: tradeId, userId: session.user.id },
+    where: { id: tradeId, userId: user.id },
   });
   if (!trade) {
     throw new Error("Trade not found");
   }
 
-  const file = formData.get("screenshot") as File | null;
-  if (!file || file.size === 0) {
-    throw new Error("No file provided");
-  }
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const storagePath = `${session.user.id}/${tradeId}-${file.name}`;
-
-  const { error: uploadError } = await supabaseAdmin.storage
-    .from("trade-screenshots")
-    .upload(storagePath, buffer, {
-      contentType: file.type,
-      upsert: true,
-    });
-
-  if (uploadError) {
-    throw new Error(`Upload failed: ${uploadError.message}`);
-  }
-
-  await prisma.trade.update({
-    where: { id: tradeId },
-    data: { screenshotPath: storagePath },
-  });
+  await saveScreenshot(user.id, tradeId, formData);
 
   revalidatePath("/dashboard/trades");
   revalidatePath(`/dashboard/trades/${tradeId}/edit`);
