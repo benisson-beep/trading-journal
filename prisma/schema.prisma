@@ -35,6 +35,7 @@ model Trade {
   fees        Decimal
   date        DateTime
   notes       String?
+  screenshotPath String?
 
   createdAt DateTime @default(now())
 }
