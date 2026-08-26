@@ -9,6 +9,13 @@ export default function NewTradePage() {
       <h2 className="text-2xl font-bold mb-6">Add Trade</h2>
       <form action={createTrade} className="space-y-4">
         <div>
+          <Label htmlFor="screenshot">Screenshot (optional)</Label>
+          <Input
+            id="screenshot"
+            name="screenshot"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+          />
           <Label htmlFor="symbol">Symbol</Label>
           <Input id="symbol" name="symbol" placeholder="AAPL" required />
         </div>
@@ -60,6 +67,8 @@ export default function NewTradePage() {
         </div>
           <Label htmlFor="tags">Tags (comma-separated)</Label>
           <Input id="tags" name="tags" placeholder="breakout, high-conviction" />
+        </div>
+                <div>
         </div>
         <Button type="submit">Save Trade</Button>
       </form>
