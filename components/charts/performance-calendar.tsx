@@ -66,7 +66,7 @@ export function PerformanceCalendar({
             return <div key={`empty-${index}`} />;
           }
 
-          const dateKey = new Date(year, month, day).toISOString().split("T")[0];
+          const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const dayData = dailyData.get(dateKey);
 
           let bgColor = "bg-gray-900";
@@ -97,3 +97,4 @@ export function PerformanceCalendar({
     </div>
   );
 }
+
