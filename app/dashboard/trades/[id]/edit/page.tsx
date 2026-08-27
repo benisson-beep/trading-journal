@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { updateTrade } from "../../actions";
 import { notFound } from "next/navigation";
+import { getScreenshotUrl } from "@/lib/supabase-admin";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -30,6 +31,9 @@ export default async function EditTradePage({
   if (!trade) {
     notFound();
   }
+    const screenshotUrl = trade.screenshotPath
+    ? await getScreenshotUrl(trade.screenshotPath)
+    : null;
 
   const updateTradeWithId = updateTrade.bind(null, trade.id);
 
@@ -154,6 +158,20 @@ export default async function EditTradePage({
     defaultValue={trade.notes ?? ""}
   />
 </div>
+        <div>
+          <Label htmlFor="screenshot">
+            Screenshot {trade.screenshotPath ? "(replace)" : "(optional)"}
+          </Label>
+          {screenshotUrl && (
+            <img src={screenshotUrl} alt="Current screenshot" className="mb-2 h-32 w-auto rounded border border-gray-700" />
+          )}
+          <Input
+            id="screenshot"
+            name="screenshot"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+          />
+        </div>
 
         <Button type="submit">Save Changes</Button>
       </form>
