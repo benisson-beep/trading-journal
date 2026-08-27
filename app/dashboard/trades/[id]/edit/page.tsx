@@ -37,6 +37,17 @@ export default async function EditTradePage({
     <div className="max-w-md">
       <h2 className="text-2xl font-bold mb-6">Edit Trade</h2>
       <form action={updateTradeWithId} className="space-y-4">
+         <div>
+          <Label htmlFor="screenshot">
+            Screenshot {trade.screenshotPath ? "(replace)" : "(optional)"}
+          </Label>
+          <Input
+            id="screenshot"
+            name="screenshot"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+          />
+        </div>
         <div>
           <Label htmlFor="symbol">Symbol</Label>
           <Input id="symbol" name="symbol" defaultValue={trade.symbol} required />

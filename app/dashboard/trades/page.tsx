@@ -5,6 +5,7 @@ import { PrismaClient } from "@/lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { deleteTrade } from "./actions";
 import { calculatePnl } from "@/lib/trade-utils";
+import { getScreenshotUrl } from "@/lib/supabase-admin";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -20,6 +21,13 @@ export default async function TradesPage() {
     where: { userId: user!.id },
     orderBy: { date: "desc" },    include: { tags: true },
   });
+    const screenshotUrls = Object.fromEntries(
+    await Promise.all(
+      trades
+        .filter((t) => t.screenshotPath)
+        .map(async (t) => [t.id, await getScreenshotUrl(t.screenshotPath!)])
+    )
+  );
 
   return (
     <div>
@@ -45,6 +53,7 @@ export default async function TradesPage() {
               <th className="py-2">Qty</th>
               <th className="py-2">P&L</th>
               <th className="py-2">Notes</th>
+              <th className="py-2">Screenshot</th>
               <th className="py-2">Actions</th>
             </tr>
           </thead>
@@ -77,6 +86,13 @@ export default async function TradesPage() {
                   <td className="py-2 text-gray-400 max-w-[150px] truncate">
                   {trade.notes || "—"}
                   </td>
+                  <td className="py-2">
+                    {screenshotUrls[trade.id] ? (
+                      <a href={screenshotUrls[trade.id]} target="_blank" rel="noopener noreferrer"> <img src={screenshotUrls[trade.id]} alt="Trade screenshot" className="h-10 w-10 object-cover rounded border border-gray-700"/> </a> ) : (
+                      "—"
+                    )}
+                  </td>
+
                   <td className="py-2 flex gap-2">
                    <Link href={`/dashboard/trades/${trade.id}/edit`}>
                    <Button variant="outline" size="sm" className="bg-black text-white border-gray-700 hover:bg-gray-800">

@@ -10,3 +10,16 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
 }
 
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+export async function getScreenshotUrl(path: string) {
+  const { data, error } = await supabaseAdmin.storage
+    .from("trade-screenshots")
+    .createSignedUrl(path, 3600); // valid for 1 hour
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data.signedUrl;
+}  
+
