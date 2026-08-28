@@ -24,7 +24,7 @@ without explanation, flag shortcuts vs. production approaches, occasional unders
 - `app/dashboard/trades/new/page.tsx` — add trade form (symbol, direction, entry/exit price, quantity, contractSize, fees, date, tags, notes, screenshot)
 - `app/dashboard/trades/[id]/edit/page.tsx` — edit trade form, pre-filled, includes tags and current screenshot preview
 - `app/dashboard/trades/actions.ts` — Server Actions: `createTrade`, `updateTrade`, `deleteTrade`, `getOrCreateTags`, `getUserTags`, `uploadScreenshot`, plus internal `saveScreenshot` helper
-- `app/dashboard/analytics/page.tsx` — full analytics dashboard
+- `app/dashboard/analytics/page.tsx` — full analytics dashboard, including interactive calendar
 - `lib/trade-utils.ts` — **single source of truth** for all calculations (pure functions): `calculatePnl`, `calculateStats`, `calculateEquityCurve`, `calculateDailyPerformance`, `calculateMonthlyPerformance`
 - `lib/supabase-admin.ts` — service-role Supabase client (`supabaseAdmin`) and `getScreenshotUrl(path)` helper for generating signed URLs
 - `components/charts/` — `equity-curve-chart.tsx`, `win-loss-pie-chart.tsx`, `monthly-performance-chart.tsx`, `performance-calendar.tsx` (all Client Components, "use client")
@@ -40,10 +40,11 @@ without explanation, flag shortcuts vs. production approaches, occasional unders
 1. ✅ Google sign-in/sign-out, protected routes
 2. ✅ Add/edit/delete trades, scoped securely to logged-in user (never trust client-provided ID alone — always filter by userId too)
 3. ✅ Trade list with correct P&L for lot-based instruments (quantity × contractSize)
-4. ✅ Full Analytics dashboard: Total Trades, Net P&L, Win Rate, Gross Profit/Loss, Profit Factor, Avg Win/Loss, Risk/Reward, Expectancy, Equity Curve chart, Win/Loss Pie chart, Monthly Performance bar chart, Daily Performance calendar heatmap
+4. ✅ Full Analytics dashboard: Total Trades, Net P&L, Win Rate, Gross Profit/Loss, Profit Factor, Avg Win/Loss, Risk/Reward, Expectancy, Equity Curve chart, Win/Loss Pie chart, Monthly Performance bar chart
 5. ✅ Trade tags (proper many-to-many relation, not comma-string shortcut)
 6. ✅ Trade notes (textarea, truncated preview in list)
 7. ✅ Screenshot uploads via Supabase Storage (private bucket + signed URLs)
+8. ✅ Interactive daily performance calendar — color-coded heatmap, trade-count badges, click-to-expand day panel showing individual trade cards
 
 ## Completed: Screenshot Uploads (Supabase Storage)
 **Architecture:** private bucket + signed URLs (not public bucket), since screenshots may contain
@@ -79,9 +80,48 @@ on-demand whenever a trade with a screenshot is displayed.
   with legacy `service_role`/`anon` keys separate from newer `secret`/`publishable` keys (we're using
   legacy `service_role` for now, deliberately, for simplicity while learning fundamentals)
 
+## Completed: Interactive Performance Calendar
+**What it does:** monthly calendar grid where each day is color-coded green/red by that day's net P&L,
+shows a small trade-count badge, and — when clicked — expands an inline panel below the grid listing
+that day's individual trades as cards (symbol, Buy/Sell, win/loss dot, $ P&L). Clicking the same day
+again collapses the panel; switching months clears the selection. Cell height is `h-20`.
+
+**Implementation:**
+- `lib/trade-utils.ts` — `calculateDailyPerformance` now returns, per day, both the existing aggregate
+  (`pnl`, `tradeCount`) and a `trades: DailyTradeSummary[]` array
+- `DailyTradeSummary` is a new plain-object type (`{ id, symbol, direction, pnl }`) deliberately
+  excluding raw Prisma `Decimal` fields (entryPrice, exitPrice, etc.) — those cannot cross the
+  Server Component → Client Component boundary
+- `calculateMonthlyPerformance`'s input type was aligned to the same underlying `TradeForDay` type
+  used by `calculateDailyPerformance`, removing a now-redundant duplicate type
+- `components/charts/performance-calendar.tsx` — added `selectedDate` state, click handler on day
+  cells (only clickable when the day has data), inline detail panel, trade-count badge per cell
+
+**Bugs found and fixed during this feature:**
+- **Timezone off-by-one bug:** the calendar previously built each cell's date key via
+  `new Date(year, month, day).toISOString().split("T")[0]`. Because `.toISOString()` converts through
+  UTC, and the app runs in Kigali (UTC+2), local midnight shifted back a calendar day once converted —
+  a trade dated the 28th was displaying under the 29th's cell. Fix: build the date key as a plain
+  zero-padded string (`` `${year}-${month+1}-${day}` ``) with no `Date`/`toISOString()` conversion
+  involved at all, in both `calculateDailyPerformance` and `performance-calendar.tsx`. Any code doing
+  `new Date(...).toISOString()` purely to build a date *key* (not an actual timestamp) is a red flag
+  for this class of bug; prefer manual string construction from known year/month/day integers.
+- **"Only plain objects can be passed to Client Components" error:** occurred right after adding the
+  `trades` array to `DailyPerformance`, because the array initially held full Prisma trade objects
+  (including `Decimal` fields) being passed into the Client Component `PerformanceCalendar`. Fixed by
+  introducing the plain `DailyTradeSummary` type and storing that instead of the raw trade object —
+  same root cause category as the screenshot Decimal-serialization issue encountered earlier in the
+  project.
+
+**Known outstanding items (non-blocking, not yet addressed):**
+- `Decimal` import in `lib/trade-utils.ts` shows a "no exported member" lightbulb/suggestion in the
+  Problems panel — pre-existing, not caused by any of this session's changes, doesn't block builds
+- `<img>` on the edit page triggers an ESLint suggestion to use `next/image`'s `<Image />` instead,
+  for automatic optimization — worth addressing before deployment, not urgent now
+
 ## Post-MVP Ideas (from competitor research — FreeTradeJournal, TradeZella, Edgewonk)
-- Calendar heatmap (supportable by existing schema without redesign)
-- Enhanced equity curve
+- ~~Calendar heatmap~~ ✅ done, now interactive with day-click detail panel
+- Enhanced equity curve (e.g. drawdown overlay, benchmark comparison)
 - Eventual Vercel deployment
 
 ## Recurring Lessons / Debugging Patterns Learned
@@ -96,6 +136,8 @@ on-demand whenever a trade with a screenshot is displayed.
 - **Percent-encode `.env` connection string passwords carefully** — a literal `@` in the password must become `%40`, but the connection string's own structural `@` (before the host) must stay literal — don't double-encode
 - **Decimal fields**: pass to Prisma as strings (from FormData), not JS numbers, to avoid floating-point precision issues; convert with `Number()` only for display/math, never for storage
 - **Contract size / lot sizing**: for stocks, contractSize=1; for forex/indices/CFDs, contractSize = point value per lot (broker-specific, must be checked in broker's contract specs) — quantity alone is not enough for accurate P&L on non-stock instruments
+- **Server → Client Component boundary is strict about plain objects**: Prisma `Decimal` (and likely other class instances) cannot be passed as props into a `"use client"` component. Always convert to primitives (`Number()`, or build a small plain summary type) before the data crosses that boundary — this has now bitten the project twice (screenshots, calendar trades)
+- **Date keys should never round-trip through `Date`/`.toISOString()`** when the goal is just a stable string key — timezone conversion during that round-trip can silently shift the day. Build date-key strings directly from known year/month/day integers instead
 
 ## Working Habits Established
 - Git commit after every meaningful step, imperative-mood messages, verify with `git status`/`git push` before moving on
