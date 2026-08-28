@@ -98,46 +98,70 @@ export function calculateEquityCurve(trades: TradeWithDate[]): EquityPoint[] {
   });
 }
 
-type TradeWithDateAndId = TradeForCalc & { date: Date; id: string };
+type TradeForDay = TradeForCalc & {
+  id: string;
+  date: Date;
+  symbol: string;
+  direction: "LONG" | "SHORT";
+};
+
+// Plain, serializable summary of a trade — safe to pass from a Server
+// Component into a Client Component. Deliberately excludes Decimal fields
+// (entryPrice, exitPrice, etc.) since those cannot cross that boundary.
+export type DailyTradeSummary = {
+  id: string;
+  symbol: string;
+  direction: "LONG" | "SHORT";
+  pnl: number;
+};
 
 export type DailyPerformance = {
   date: string;
   pnl: number;
   tradeCount: number;
+  trades: DailyTradeSummary[];
 };
 
 export function calculateDailyPerformance(
-  trades: TradeWithDateAndId[]
+  trades: TradeForDay[]
 ): Map<string, DailyPerformance> {
   const dailyMap = new Map<string, DailyPerformance>();
 
   for (const trade of trades) {
     const date = new Date(trade.date);
 
-if (isNaN(date.getTime())) {
-  continue;
-}
+    if (isNaN(date.getTime())) {
+      continue;
+    }
 
-const dateKey = date.toISOString().split("T")[0];
+    const dateKey = date.toISOString().split("T")[0];
     const pnl = calculatePnl(trade);
+
+    const tradeSummary: DailyTradeSummary = {
+      id: trade.id,
+      symbol: trade.symbol,
+      direction: trade.direction,
+      pnl,
+    };
 
     const existing = dailyMap.get(dateKey);
 
     if (existing) {
       existing.pnl += pnl;
       existing.tradeCount += 1;
+      existing.trades.push(tradeSummary);
     } else {
       dailyMap.set(dateKey, {
         date: dateKey,
         pnl,
         tradeCount: 1,
+        trades: [tradeSummary],
       });
     }
   }
 
   return dailyMap;
 }
-
 
 export type MonthlyPerformance = {
   month: string;
@@ -146,7 +170,7 @@ export type MonthlyPerformance = {
 };
 
 export function calculateMonthlyPerformance(
-  trades: TradeWithDateAndId[]
+  trades: TradeForDay[]
 ): MonthlyPerformance[] {
   const monthlyMap = new Map<string, MonthlyPerformance>();
 
