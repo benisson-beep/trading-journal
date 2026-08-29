@@ -1,12 +1,12 @@
-import { Decimal } from "@/lib/generated/prisma/client";
+import { Prisma } from "@/lib/generated/prisma/client";
 
 type TradeForCalc = {
   direction: "LONG" | "SHORT";
-  entryPrice: Decimal;
-  exitPrice: Decimal;
-  quantity: Decimal;
-  contractSize: Decimal;
-  fees: Decimal;
+  entryPrice: Prisma.Decimal;
+  exitPrice: Prisma.Decimal;
+  quantity:Prisma.Decimal;
+  contractSize: Prisma.Decimal;
+  fees: Prisma.Decimal;
 };
 
 export function calculatePnl(trade: TradeForCalc): number {
