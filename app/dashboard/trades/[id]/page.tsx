@@ -46,19 +46,19 @@ export default async function TradeDetailPage({
     <div className="max-w-2xl">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold">{trade.symbol}</h2>
-          <p className="text-gray-400 text-sm">
+          <h2 className="text-3xl font-bold tracking-tight uppercase">{trade.symbol}</h2>
+          <p className="text-muted-foreground text-sm">
             {trade.date.toLocaleDateString()} · {trade.direction}
           </p>
         </div>
         <div className="flex gap-2">
           <Link href="/dashboard/trades">
-            <Button variant="outline" size="sm" className="bg-black text-white border-gray-700 hover:bg-gray-800">
+            <Button variant="outline" size="sm">
               Back
             </Button>
           </Link>
           <Link href={`/dashboard/trades/${trade.id}/edit`}>
-            <Button variant="outline" size="sm" className="bg-black text-white border-gray-700 hover:bg-gray-800">
+            <Button variant="outline" size="sm">
               Edit
             </Button>
           </Link>
@@ -66,8 +66,8 @@ export default async function TradeDetailPage({
       </div>
 
       <div
-        className={`text-3xl font-bold mb-6 ${
-          pnl >= 0 ? "text-green-500" : "text-red-500"
+        className={`text-3xl font-bold font-mono mb-6 ${
+          pnl >= 0 ? "text-gain" : "text-loss"
         }`}
       >
         {pnl >= 0 ? "+" : ""}
@@ -76,39 +76,39 @@ export default async function TradeDetailPage({
 
       <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
         <div>
-          <p className="text-gray-400">Entry Price</p>
-          <p>{entry.toFixed(2)}</p>
+          <p className="text-muted-foreground">Entry Price</p>
+          <p className="font-mono">{entry.toFixed(2)}</p>
         </div>
         <div>
-          <p className="text-gray-400">Exit Price</p>
-          <p>{exit.toFixed(2)}</p>
+          <p className="text-muted-foreground">Exit Price</p>
+          <p className="font-mono">{exit.toFixed(2)}</p>
         </div>
         <div>
-          <p className="text-gray-400">Quantity</p>
-          <p>{quantity}</p>
+          <p className="text-muted-foreground">Quantity</p>
+          <p className="font-mono">{quantity}</p>
         </div>
         <div>
-          <p className="text-gray-400">Contract Size</p>
-          <p>{contractSize}</p>
+          <p className="text-muted-foreground">Contract Size</p>
+          <p className="font-mono">{contractSize}</p>
         </div>
         <div>
-          <p className="text-gray-400">Fees</p>
-          <p>{fees.toFixed(2)}</p>
+          <p className="text-muted-foreground">Fees</p>
+          <p className="font-mono">{fees.toFixed(2)}</p>
         </div>
         <div>
-          <p className="text-gray-400">Direction</p>
+          <p className="text-muted-foreground">Direction</p>
           <p>{trade.direction}</p>
         </div>
       </div>
 
       {trade.tags.length > 0 && (
         <div className="mb-6">
-          <p className="text-gray-400 text-sm mb-1">Tags</p>
+          <p className="text-muted-foreground text-sm mb-1">Tags</p>
           <div>
             {trade.tags.map((tag) => (
               <span
                 key={tag.id}
-                className="inline-block bg-gray-800 text-gray-300 text-xs px-2 py-0.5 rounded mr-1"
+                className="inline-block bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded mr-1"
               >
                 {tag.name}
               </span>
@@ -118,18 +118,18 @@ export default async function TradeDetailPage({
       )}
 
       <div className="mb-6">
-        <p className="text-gray-400 text-sm mb-1">Notes</p>
+        <p className="text-muted-foreground text-sm mb-1">Notes</p>
         <p className="whitespace-pre-wrap">{trade.notes || "—"}</p>
       </div>
 
       {screenshotUrl && (
         <div>
-          <p className="text-gray-400 text-sm mb-1">Screenshot</p>
+          <p className="text-muted-foreground text-sm mb-1">Screenshot</p>
           <a href={screenshotUrl} target="_blank" rel="noopener noreferrer">
             <img
               src={screenshotUrl}
               alt="Trade screenshot"
-              className="max-w-full rounded border border-gray-700"
+              className="max-w-full rounded border border-border"
             />
           </a>
         </div>

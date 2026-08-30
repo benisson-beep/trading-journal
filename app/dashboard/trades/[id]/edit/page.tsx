@@ -39,19 +39,8 @@ export default async function EditTradePage({
 
   return (
     <div className="max-w-md">
-      <h2 className="text-2xl font-bold mb-6">Edit Trade</h2>
+      <h2 className="text-3xl font-bold tracking-tight mb-6">Edit Trade</h2>
       <form action={updateTradeWithId} className="space-y-4">
-         <div>
-          <Label htmlFor="screenshot">
-            Screenshot {trade.screenshotPath ? "(replace)" : "(optional)"}
-          </Label>
-          <Input
-            id="screenshot"
-            name="screenshot"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-          />
-        </div>
         <div>
           <Label htmlFor="symbol">Symbol</Label>
           <Input id="symbol" name="symbol" defaultValue={trade.symbol} required />
@@ -63,7 +52,7 @@ export default async function EditTradePage({
             id="direction"
             name="direction"
             defaultValue={trade.direction}
-            className="w-full rounded-md border border-gray-700 bg-black px-3 py-2 text-white"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
             required
           >
             <option value="LONG">Long</option>
@@ -149,21 +138,21 @@ export default async function EditTradePage({
          />
         </div>
         <div>
-  <Label htmlFor="notes">Notes</Label>
-  <textarea
-    id="notes"
-    name="notes"
-    rows={3}
-    className="w-full rounded-md border border-gray-700 bg-black px-3 py-2 text-white"
-    defaultValue={trade.notes ?? ""}
-  />
-</div>
+          <Label htmlFor="notes">Notes</Label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows={3}
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-foreground"
+            defaultValue={trade.notes ?? ""}
+          />
+        </div>
         <div>
           <Label htmlFor="screenshot">
             Screenshot {trade.screenshotPath ? "(replace)" : "(optional)"}
           </Label>
           {screenshotUrl && (
-            <img src={screenshotUrl} alt="Current screenshot" className="mb-2 h-32 w-auto rounded border border-gray-700" />
+            <img src={screenshotUrl} alt="Current screenshot" className="mb-2 h-32 w-auto rounded border border-border" />
           )}
           <Input
             id="screenshot"
@@ -178,4 +167,3 @@ export default async function EditTradePage({
     </div>
   );
 }
-

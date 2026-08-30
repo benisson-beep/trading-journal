@@ -15,31 +15,31 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <header className="flex items-center justify-between border-b border-gray-800 px-8 py-4">
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="flex items-center justify-between border-b border-border px-8 py-4">
         <div className="flex items-center gap-6">
-  <h1 className="text-xl font-bold">Trading Journal</h1>
+  <h1 className="text-2xl font-bold tracking-tight">Trading Journal</h1>
   <nav className="flex gap-4">
-    <Link href="/dashboard" className="text-sm text-gray-400 hover:text-white">
+    <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
       Dashboard
     </Link>
-    <Link href="/dashboard/trades" className="text-sm text-gray-400 hover:text-white">
+    <Link href="/dashboard/trades" className="text-sm text-muted-foreground hover:text-foreground">
       Trades
     </Link>
-    <Link href="/dashboard/analytics" className="text-sm text-gray-400 hover:text-white">
+    <Link href="/dashboard/analytics" className="text-sm text-muted-foreground hover:text-foreground">
       Analytics
     </Link>
   </nav>
 </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-400">{session.user.name}</span>
+          <span className="text-sm text-muted-foreground">{session.user.name}</span>
           <form
             action={async () => {
               "use server";
               await signOut();
             }}
           >
-            <Button type="submit" variant="outline" size="sm" className="bg-black text-white border-gray-700 hover:bg-gray-800">
+            <Button type="submit" variant="outline" size="sm">
             Sign out
             </Button>
           </form>
