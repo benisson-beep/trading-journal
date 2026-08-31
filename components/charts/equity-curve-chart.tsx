@@ -7,13 +7,18 @@ export function EquityCurveChart({ data }: { data: EquityPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-        <XAxis dataKey="date" stroke="#888" fontSize={12} />
-        <YAxis stroke="#888" fontSize={12} />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+        <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={12} />
+        <YAxis stroke="var(--muted-foreground)" fontSize={12} />
         <Tooltip
-          contentStyle={{ backgroundColor: "#111", border: "1px solid #333" }}
+          contentStyle={{
+            backgroundColor: "var(--popover)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-md)",
+            color: "var(--popover-foreground)",
+          }}
         />
-        <Line type="monotone" dataKey="equity" stroke="#22c55e" strokeWidth={2} dot={false} />
+        <Line type="monotone" dataKey="equity" stroke="var(--primary)" strokeWidth={2} dot={false} />
       </LineChart>
     </ResponsiveContainer>
   );

@@ -14,7 +14,7 @@ export function WinLossPieChart({
     { name: "Losses", value: lossCount },
   ];
 
-  const COLORS = ["#22c55e", "#ef4444"];
+  const COLORS = ["var(--gain)", "var(--loss)"];
 
   return (
     <ResponsiveContainer width="100%" height={250}>
@@ -32,7 +32,14 @@ export function WinLossPieChart({
             <Cell key={entry.name} fill={COLORS[index]} />
           ))}
         </Pie>
-        <Tooltip contentStyle={{ backgroundColor: "#111", border: "1px solid #333" }} />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "var(--popover)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-md)",
+            color: "var(--popover-foreground)",
+          }}
+        />
         <Legend />
       </PieChart>
     </ResponsiveContainer>
