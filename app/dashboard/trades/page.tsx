@@ -6,6 +6,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { deleteTrade } from "./actions";
 import { calculatePnl } from "@/lib/trade-utils";
 import { getScreenshotUrl } from "@/lib/supabase-admin";
+import { Pencil, Trash2 } from "lucide-react";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -19,9 +20,11 @@ export default async function TradesPage() {
 
   const trades = await prisma.trade.findMany({
     where: { userId: user!.id },
-    orderBy: { date: "desc" },    include: { tags: true },
+    orderBy: { date: "desc" },
+    include: { tags: true },
   });
-    const screenshotUrls = Object.fromEntries(
+
+  const screenshotUrls = Object.fromEntries(
     await Promise.all(
       trades
         .filter((t) => t.screenshotPath)
@@ -31,98 +34,140 @@ export default async function TradesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold tracking-tight">Trades</h2>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight">Trades</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {trades.length} trade{trades.length === 1 ? "" : "s"} logged
+          </p>
+        </div>
         <Link href="/dashboard/trades/new">
           <Button>Add Trade</Button>
         </Link>
       </div>
 
       {trades.length === 0 ? (
-        <p className="text-muted-foreground">No trades yet.</p>
+        <div className="rounded-xl border border-dashed border-border p-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            No trades logged yet.
+          </p>
+          <Link href="/dashboard/trades/new" className="mt-4 inline-block">
+            <Button size="sm">Add your first trade</Button>
+          </Link>
+        </div>
       ) : (
-        <table className="w-full text-left text-sm font-mono">
-          <thead>
-            <tr className="border-b border-border text-muted-foreground font-sans">
-              <th className="py-2">Date</th>
-              <th className="py-2">Symbol</th>
-              <th className="py-2">Tags</th>
-              <th className="py-2">Direction</th>
-              <th className="py-2">Entry</th>
-              <th className="py-2">Exit</th>
-              <th className="py-2">Qty</th>
-              <th className="py-2">P&L</th>
-              <th className="py-2">Notes</th>
-              <th className="py-2">Screenshot</th>
-              <th className="py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {trades.map((trade) => {
-               const entry = Number(trade.entryPrice);
-               const exit = Number(trade.exitPrice);
-               const quantity = Number(trade.quantity);
-               const pnl = calculatePnl(trade);
+        <div className="overflow-x-auto rounded-xl border border-border bg-card">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="px-4 py-3 font-medium">Date</th>
+                <th className="px-4 py-3 font-medium">Symbol</th>
+                <th className="px-4 py-3 font-medium">Tags</th>
+                <th className="px-4 py-3 font-medium">Direction</th>
+                <th className="px-4 py-3 font-medium">Entry</th>
+                <th className="px-4 py-3 font-medium">Exit</th>
+                <th className="px-4 py-3 font-medium">Qty</th>
+                <th className="px-4 py-3 font-medium">P&L</th>
+                <th className="px-4 py-3 font-medium">Notes</th>
+                <th className="px-4 py-3 font-medium">Screenshot</th>
+                <th className="px-4 py-3 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {trades.map((trade) => {
+                const entry = Number(trade.entryPrice);
+                const exit = Number(trade.exitPrice);
+                const quantity = Number(trade.quantity);
+                const pnl = calculatePnl(trade);
 
-              return (
-                <tr key={trade.id} className="border-b border-border">
-                  <td className="py-2">{trade.date.toLocaleDateString()}</td>
-                  <td className="py-2 font-sans uppercase">{trade.symbol}</td>
-                  <td className="py-2 font-sans">{trade.tags.map((tag) => (<span
-                  key={tag.id}className="inline-block bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded mr-1">
-                  {tag.name}</span>
-                  ))}
-                  </td>
-                  <td className="py-2 font-sans">{trade.direction}</td>
-                  <td className="py-2">{entry.toFixed(2)}</td>
-                  <td className="py-2">{exit.toFixed(2)}</td>
-                  <td className="py-2">{quantity}</td>
-                  <td
-                    className={`py-2 ${pnl >= 0 ? "text-gain" : "text-loss"}`}
+                return (
+                  <tr
+                    key={trade.id}
+                    className="transition-colors hover:bg-accent/40"
                   >
-                    {pnl >= 0 ? "+" : ""}
-                    {pnl.toFixed(2)}
-                  </td>
-                  <td className="py-2 text-muted-foreground max-w-[150px] truncate font-sans">
-                  {trade.notes || "—"}
-                  </td>
-                  <td className="py-2">
-                    {screenshotUrls[trade.id] ? (
-                      <a href={screenshotUrls[trade.id]} target="_blank" rel="noopener noreferrer"> <img src={screenshotUrls[trade.id]} alt="Trade screenshot" className="h-10 w-10 object-cover rounded border border-border"/> </a> ) : (
-                      "—"
-                    )}
-                  </td>
-
-                  <td className="py-2 font-sans">
-                    <div className="flex items-center gap-2">
-                      <Link href={`/dashboard/trades/${trade.id}`}>
-                        <Button variant="outline" size="sm">
-                          View
-                        </Button>
-                      </Link>
-                      <Link href={`/dashboard/trades/${trade.id}/edit`}>
-                        <Button variant="outline" size="sm" className="gap-1.5">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                          </svg>
-                        </Button>
-                      </Link>
-                      <form action={deleteTrade.bind(null, trade.id)}>
-                        <Button type="submit" variant="destructive" size="sm" className="gap-1.5">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M3 6h18" />
-                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          </svg>
-                        </Button>
-                      </form>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    <td className="px-4 py-3 font-mono text-muted-foreground">
+                      {trade.date.toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 font-medium uppercase">
+                      {trade.symbol}
+                    </td>
+                    <td className="px-4 py-3">
+                      {trade.tags.map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="mr-1 inline-block rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                        >
+                          {tag.name}
+                        </span>
+                      ))}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${
+                          trade.direction === "LONG"
+                            ? "bg-gain/15 text-gain"
+                            : "bg-loss/15 text-loss"
+                        }`}
+                      >
+                        {trade.direction}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-mono">{entry.toFixed(2)}</td>
+                    <td className="px-4 py-3 font-mono">{exit.toFixed(2)}</td>
+                    <td className="px-4 py-3 font-mono">{quantity}</td>
+                    <td
+                      className={`px-4 py-3 font-mono font-semibold ${
+                        pnl >= 0 ? "text-gain" : "text-loss"
+                      }`}
+                    >
+                      {pnl >= 0 ? "+" : ""}
+                      {pnl.toFixed(2)}
+                    </td>
+                    <td className="max-w-[150px] truncate px-4 py-3 text-muted-foreground">
+                      {trade.notes || "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {screenshotUrls[trade.id] ? (
+                        <a
+                          href={screenshotUrls[trade.id]}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <img
+                            src={screenshotUrls[trade.id]}
+                            alt="Trade screenshot"
+                            className="h-10 w-10 rounded border border-border object-cover"
+                          />
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Link href={`/dashboard/trades/${trade.id}`}>
+                          <Button variant="outline" size="sm">
+                            View
+                          </Button>
+                        </Link>
+                        <Link href={`/dashboard/trades/${trade.id}/edit`}>
+                          <Button variant="outline" size="sm">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </Link>
+                        <form action={deleteTrade.bind(null, trade.id)}>
+                          <Button type="submit" variant="destructive" size="sm">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
