@@ -27,7 +27,7 @@ export default async function LoginPage() {
 
       <div className="relative z-10 mb-8 text-center">
         <h2 className="text-2xl font-bold tracking-tight">Trading Journal</h2>
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+        <p className="mt- max-w-sm text-sm text-muted-foreground">
           Track your trades. Understand your performance. Improve your edge.
         </p>
       </div>
