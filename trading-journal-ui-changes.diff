@@ -1,0 +1,704 @@
+diff --git a/app/dashboard/layout.tsx b/app/dashboard/layout.tsx
+index a8e640c..ca67809 100644
+--- a/app/dashboard/layout.tsx
++++ b/app/dashboard/layout.tsx
+@@ -1,7 +1,6 @@
+-import Link from "next/link";
+ import { auth, signOut } from "@/auth";
+ import { redirect } from "next/navigation";
+-import { Button } from "@/components/ui/button";
++import { Sidebar } from "@/components/dashboard/sidebar";
+ 
+ export default async function DashboardLayout({
+   children,
+@@ -14,38 +13,20 @@ export default async function DashboardLayout({
+     redirect("/");
+   }
+ 
++  async function handleSignOut() {
++    "use server";
++    await signOut();
++  }
++
+   return (
+     <div className="min-h-screen bg-background text-foreground">
+-      <header className="flex items-center justify-between border-b border-border px-8 py-4">
+-        <div className="flex items-center gap-6">
+-  <h1 className="text-2xl font-bold tracking-tight">Trading Journal</h1>
+-  <nav className="flex gap-4">
+-    <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground">
+-      Dashboard
+-    </Link>
+-    <Link href="/dashboard/trades" className="text-sm text-muted-foreground hover:text-foreground">
+-      Trades
+-    </Link>
+-    <Link href="/dashboard/analytics" className="text-sm text-muted-foreground hover:text-foreground">
+-      Analytics
+-    </Link>
+-  </nav>
+-</div>
+-        <div className="flex items-center gap-4">
+-          <span className="text-sm text-muted-foreground">{session.user.name}</span>
+-          <form
+-            action={async () => {
+-              "use server";
+-              await signOut();
+-            }}
+-          >
+-            <Button type="submit" variant="outline" size="sm">
+-            Sign out
+-            </Button>
+-          </form>
+-        </div>
+-      </header>
+-      <main className="p-8">{children}</main>
++      <Sidebar
++        userName={session.user.name ?? ""}
++        onSignOut={handleSignOut}
++      />
++      <div className="lg:pl-64">
++        <main className="p-6 md:p-8">{children}</main>
++      </div>
+     </div>
+   );
+-}
+\ No newline at end of file
++}
+diff --git a/app/dashboard/page.tsx b/app/dashboard/page.tsx
+index 6f3d5aa..8d3cf9f 100644
+--- a/app/dashboard/page.tsx
++++ b/app/dashboard/page.tsx
+@@ -1,6 +1,8 @@
+ import { auth } from "@/auth";
+ import { PrismaClient } from "@/lib/generated/prisma/client";
+ import { PrismaPg } from "@prisma/adapter-pg";
++import { calculateStats } from "@/lib/trade-utils";
++import { StatCard } from "@/components/dashboard/stat-card";
+ 
+ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+ const prisma = new PrismaClient({ adapter });
+@@ -16,61 +18,41 @@ export default async function Dashboard() {
+     where: { userId: user!.id },
+   });
+ 
+-  const pnls = trades.map((trade) => {
+-    const entry = Number(trade.entryPrice);
+-    const exit = Number(trade.exitPrice);
+-    const quantity = Number(trade.quantity);
+-    const contractSize = Number(trade.contractSize);
+-    const fees = Number(trade.fees);
+-    return trade.direction === "LONG"
+-      ? (exit - entry) * quantity * contractSize - fees
+-      : (entry - exit) * quantity * contractSize - fees;
+-  });
+-
+-  const totalTrades = trades.length;
+-  const totalPnl = pnls.reduce((sum, pnl) => sum + pnl, 0);
+-  const wins = pnls.filter((pnl) => pnl > 0);
+-  const losses = pnls.filter((pnl) => pnl < 0);
+-  const winRate = totalTrades > 0 ? (wins.length / totalTrades) * 100 : 0;
+-  const avgWin =
+-    wins.length > 0 ? wins.reduce((sum, pnl) => sum + pnl, 0) / wins.length : 0;
+-  const avgLoss =
+-    losses.length > 0
+-      ? losses.reduce((sum, pnl) => sum + pnl, 0) / losses.length
+-      : 0;
++  const hasTrades = trades.length > 0;
++  const stats = calculateStats(trades);
+ 
+-  const stats = [
+-    { label: "Total P&L", value: `${totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(2)}`, positive: totalPnl >= 0 },
+-    { label: "Win Rate", value: `${winRate.toFixed(1)}%` },
+-    { label: "Total Trades", value: totalTrades.toString() },
+-    { label: "Avg Win", value: `+${avgWin.toFixed(2)}`, positive: true },
+-    { label: "Avg Loss", value: avgLoss.toFixed(2), positive: false },
+-  ];
++  const firstName = session?.user?.name?.split(" ")[0];
+ 
+   return (
+-    <div>
+-      <p className="text-gray-400 mb-6">Welcome, {session?.user?.name}</p>
+-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+-        {stats.map((stat) => (
+-          <div
+-            key={stat.label}
+-            className="rounded-lg border border-gray-800 p-4"
+-          >
+-            <p className="text-sm text-gray-400">{stat.label}</p>
+-            <p
+-              className={`text-2xl font-bold ${
+-                stat.positive === true
+-                  ? "text-green-500"
+-                  : stat.positive === false
+-                  ? "text-red-500"
+-                  : "text-white"
+-              }`}
+-            >
+-              {stat.value}
+-            </p>
+-          </div>
+-        ))}
++    <div className="space-y-8">
++      <div>
++        <h2 className="text-2xl font-semibold tracking-tight">
++          Welcome back{firstName ? `, ${firstName}` : ""}
++        </h2>
++        <p className="mt-1 text-sm text-muted-foreground">
++          Here&apos;s how your trading is going.
++        </p>
+       </div>
++
++      {!hasTrades ? (
++        <div className="rounded-xl border border-dashed border-border p-12 text-center">
++          <p className="text-sm text-muted-foreground">
++            No trades logged yet. Add your first trade to see your
++            performance here.
++          </p>
++        </div>
++      ) : (
++        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
++          <StatCard
++            label="Net P&L"
++            value={`${stats.netPnl >= 0 ? "+" : ""}${stats.netPnl.toFixed(2)}`}
++            variant={stats.netPnl >= 0 ? "gain" : "loss"}
++          />
++          <StatCard label="Win Rate" value={`${stats.winRate.toFixed(1)}%`} />
++          <StatCard label="Total Trades" value={stats.totalTrades.toString()} />
++          <StatCard label="Profit Factor" value={stats.profitFactor.toFixed(2)} />
++        </div>
++      )}
+     </div>
+   );
+-}
+\ No newline at end of file
++}
+diff --git a/app/dashboard/trades/new/page.tsx b/app/dashboard/trades/new/page.tsx
+index 1c3af54..e286058 100644
+--- a/app/dashboard/trades/new/page.tsx
++++ b/app/dashboard/trades/new/page.tsx
+@@ -1,76 +1,153 @@
++import Link from "next/link";
+ import { Button } from "@/components/ui/button";
+ import { Input } from "@/components/ui/input";
+ import { Label } from "@/components/ui/label";
+ import { createTrade } from "../actions";
+ 
++const fieldClass =
++  "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm dark:bg-input/30";
++
+ export default function NewTradePage() {
+   return (
+-    <div className="max-w-md">
+-      <h2 className="text-2xl font-bold mb-6">Add Trade</h2>
+-      <form action={createTrade} className="space-y-4">
+-        <div>
+-          <Label htmlFor="screenshot">Screenshot (optional)</Label>
+-          <Input
+-            id="screenshot"
+-            name="screenshot"
+-            type="file"
+-            accept="image/png,image/jpeg,image/webp"
+-          />
+-          <Label htmlFor="symbol">Symbol</Label>
+-          <Input id="symbol" name="symbol" placeholder="AAPL" required />
+-        </div>
+-        <div>
+-          <Label htmlFor="direction">Direction</Label>
+-          <select
+-            id="direction"
+-            name="direction"
+-            className="w-full rounded-md border border-gray-700 bg-black px-3 py-2 text-white"
+-            required
+-          >
+-            <option value="LONG">Long</option>
+-            <option value="SHORT">Short</option>
+-          </select>
+-        </div>
+-        <div>
+-          <Label htmlFor="entryPrice">Entry price</Label>
+-          <Input id="entryPrice" name="entryPrice" type="number" step="0.00001" required />
+-        </div>
+-        <div>
+-          <Label htmlFor="exitPrice">Exit price</Label>
+-          <Input id="exitPrice" name="exitPrice" type="number" step="0.00001" required />
+-        </div>
+-        <div>
+-          <Label htmlFor="quantity">Quantity</Label>
+-          <Input id="quantity" name="quantity" type="number" step="0.01" defaultValue="0.01" required />
+-        </div>
+-        <div>
+-          <Label htmlFor="contractSize">Contract size (multiplier)</Label>
+-          <Input id="contractSize" name="contractSize" type="number" step="0.01" defaultValue="1" />
+-        </div>
+-        <div>
+-          <Label htmlFor="fees">Fees</Label>
+-          <Input id="fees" name="fees" type="number" step="0.01" defaultValue="0" />
+-        </div>
+-        <div>
+-          <Label htmlFor="date">Date</Label>
+-          <Input id="date" name="date" type="date" required />
++    <div className="mx-auto max-w-2xl">
++      <div className="mb-6">
++        <h2 className="text-2xl font-semibold tracking-tight">Add Trade</h2>
++        <p className="mt-1 text-sm text-muted-foreground">
++          Log a new trade to your journal.
++        </p>
++      </div>
++
++      <form
++        action={createTrade}
++        className="space-y-6 rounded-xl border border-border bg-card p-6"
++      >
++        {/* Trade details */}
++        <div className="space-y-4">
++          <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
++            Trade Details
++          </h3>
++          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
++            <div className="space-y-1.5">
++              <Label htmlFor="symbol">Symbol</Label>
++              <Input id="symbol" name="symbol" placeholder="AAPL" required />
++            </div>
++            <div className="space-y-1.5">
++              <Label htmlFor="direction">Direction</Label>
++              <select
++                id="direction"
++                name="direction"
++                className={fieldClass}
++                required
++              >
++                <option value="LONG">Long</option>
++                <option value="SHORT">Short</option>
++              </select>
++            </div>
++            <div className="space-y-1.5">
++              <Label htmlFor="date">Date</Label>
++              <Input id="date" name="date" type="date" required />
++            </div>
++          </div>
+         </div>
+-        <div>
+-        <div>
+-         <Label htmlFor="notes">Notes</Label>
+-          <textarea
+-           id="notes"
+-          name="notes"
+-          rows={3}
+-          className="w-full rounded-md border border-gray-700 bg-black px-3 py-2 text-white"
+-          placeholder="What was your setup, reasoning, or lesson learned?"/>
++
++        {/* Position */}
++        <div className="space-y-4 border-t border-border pt-6">
++          <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
++            Position
++          </h3>
++          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
++            <div className="space-y-1.5">
++              <Label htmlFor="entryPrice">Entry price</Label>
++              <Input
++                id="entryPrice"
++                name="entryPrice"
++                type="number"
++                step="0.00001"
++                required
++              />
++            </div>
++            <div className="space-y-1.5">
++              <Label htmlFor="exitPrice">Exit price</Label>
++              <Input
++                id="exitPrice"
++                name="exitPrice"
++                type="number"
++                step="0.00001"
++                required
++              />
++            </div>
++            <div className="space-y-1.5">
++              <Label htmlFor="quantity">Quantity</Label>
++              <Input
++                id="quantity"
++                name="quantity"
++                type="number"
++                step="0.01"
++                defaultValue="0.01"
++                required
++              />
++            </div>
++            <div className="space-y-1.5">
++              <Label htmlFor="contractSize">Contract size (multiplier)</Label>
++              <Input
++                id="contractSize"
++                name="contractSize"
++                type="number"
++                step="0.01"
++                defaultValue="1"
++              />
++            </div>
++            <div className="space-y-1.5">
++              <Label htmlFor="fees">Fees</Label>
++              <Input
++                id="fees"
++                name="fees"
++                type="number"
++                step="0.01"
++                defaultValue="0"
++              />
++            </div>
++          </div>
+         </div>
+-          <Label htmlFor="tags">Tags (comma-separated)</Label>
+-          <Input id="tags" name="tags" placeholder="breakout, high-conviction" />
++
++        {/* Context */}
++        <div className="space-y-4 border-t border-border pt-6">
++          <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
++            Context
++          </h3>
++          <div className="space-y-1.5">
++            <Label htmlFor="notes">Notes</Label>
++            <textarea
++              id="notes"
++              name="notes"
++              rows={3}
++              className={fieldClass + " h-auto py-2"}
++              placeholder="What was your setup, reasoning, or lesson learned?"
++            />
++          </div>
++          <div className="space-y-1.5">
++            <Label htmlFor="tags">Tags (comma-separated)</Label>
++            <Input id="tags" name="tags" placeholder="breakout, high-conviction" />
++          </div>
++          <div className="space-y-1.5">
++            <Label htmlFor="screenshot">Screenshot (optional)</Label>
++            <Input
++              id="screenshot"
++              name="screenshot"
++              type="file"
++              accept="image/png,image/jpeg,image/webp"
++            />
++          </div>
+         </div>
+-                <div>
++
++        <div className="flex items-center gap-3 border-t border-border pt-6">
++          <Button type="submit">Save Trade</Button>
++          <Link href="/dashboard/trades">
++            <Button type="button" variant="outline">
++              Cancel
++            </Button>
++          </Link>
+         </div>
+-        <Button type="submit">Save Trade</Button>
+       </form>
+     </div>
+   );
+diff --git a/app/dashboard/trades/page.tsx b/app/dashboard/trades/page.tsx
+index fdf0fa8..baf872c 100644
+--- a/app/dashboard/trades/page.tsx
++++ b/app/dashboard/trades/page.tsx
+@@ -6,6 +6,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
+ import { deleteTrade } from "./actions";
+ import { calculatePnl } from "@/lib/trade-utils";
+ import { getScreenshotUrl } from "@/lib/supabase-admin";
++import { Pencil, Trash2 } from "lucide-react";
+ 
+ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+ const prisma = new PrismaClient({ adapter });
+@@ -19,9 +20,11 @@ export default async function TradesPage() {
+ 
+   const trades = await prisma.trade.findMany({
+     where: { userId: user!.id },
+-    orderBy: { date: "desc" },    include: { tags: true },
++    orderBy: { date: "desc" },
++    include: { tags: true },
+   });
+-    const screenshotUrls = Object.fromEntries(
++
++  const screenshotUrls = Object.fromEntries(
+     await Promise.all(
+       trades
+         .filter((t) => t.screenshotPath)
+@@ -31,99 +34,141 @@ export default async function TradesPage() {
+ 
+   return (
+     <div>
+-      <div className="flex items-center justify-between mb-6">
+-        <h2 className="text-3xl font-bold tracking-tight">Trades</h2>
++      <div className="mb-6 flex items-center justify-between">
++        <div>
++          <h2 className="text-2xl font-semibold tracking-tight">Trades</h2>
++          <p className="mt-1 text-sm text-muted-foreground">
++            {trades.length} trade{trades.length === 1 ? "" : "s"} logged
++          </p>
++        </div>
+         <Link href="/dashboard/trades/new">
+           <Button>Add Trade</Button>
+         </Link>
+       </div>
+ 
+       {trades.length === 0 ? (
+-        <p className="text-muted-foreground">No trades yet.</p>
++        <div className="rounded-xl border border-dashed border-border p-12 text-center">
++          <p className="text-sm text-muted-foreground">
++            No trades logged yet.
++          </p>
++          <Link href="/dashboard/trades/new" className="mt-4 inline-block">
++            <Button size="sm">Add your first trade</Button>
++          </Link>
++        </div>
+       ) : (
+-        <table className="w-full text-left text-sm font-mono">
+-          <thead>
+-            <tr className="border-b border-border text-muted-foreground font-sans">
+-              <th className="py-2">Date</th>
+-              <th className="py-2">Symbol</th>
+-              <th className="py-2">Tags</th>
+-              <th className="py-2">Direction</th>
+-              <th className="py-2">Entry</th>
+-              <th className="py-2">Exit</th>
+-              <th className="py-2">Qty</th>
+-              <th className="py-2">P&L</th>
+-              <th className="py-2">Notes</th>
+-              <th className="py-2">Screenshot</th>
+-              <th className="py-2">Actions</th>
+-            </tr>
+-          </thead>
+-          <tbody>
+-            {trades.map((trade) => {
+-               const entry = Number(trade.entryPrice);
+-               const exit = Number(trade.exitPrice);
+-               const quantity = Number(trade.quantity);
+-               const pnl = calculatePnl(trade);
++        <div className="overflow-x-auto rounded-xl border border-border bg-card">
++          <table className="w-full text-left text-sm">
++            <thead>
++              <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
++                <th className="px-4 py-3 font-medium">Date</th>
++                <th className="px-4 py-3 font-medium">Symbol</th>
++                <th className="px-4 py-3 font-medium">Tags</th>
++                <th className="px-4 py-3 font-medium">Direction</th>
++                <th className="px-4 py-3 font-medium">Entry</th>
++                <th className="px-4 py-3 font-medium">Exit</th>
++                <th className="px-4 py-3 font-medium">Qty</th>
++                <th className="px-4 py-3 font-medium">P&L</th>
++                <th className="px-4 py-3 font-medium">Notes</th>
++                <th className="px-4 py-3 font-medium">Screenshot</th>
++                <th className="px-4 py-3 font-medium">Actions</th>
++              </tr>
++            </thead>
++            <tbody className="divide-y divide-border">
++              {trades.map((trade) => {
++                const entry = Number(trade.entryPrice);
++                const exit = Number(trade.exitPrice);
++                const quantity = Number(trade.quantity);
++                const pnl = calculatePnl(trade);
+ 
+-              return (
+-                <tr key={trade.id} className="border-b border-border">
+-                  <td className="py-2">{trade.date.toLocaleDateString()}</td>
+-                  <td className="py-2 font-sans uppercase">{trade.symbol}</td>
+-                  <td className="py-2 font-sans">{trade.tags.map((tag) => (<span
+-                  key={tag.id}className="inline-block bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded mr-1">
+-                  {tag.name}</span>
+-                  ))}
+-                  </td>
+-                  <td className="py-2 font-sans">{trade.direction}</td>
+-                  <td className="py-2">{entry.toFixed(2)}</td>
+-                  <td className="py-2">{exit.toFixed(2)}</td>
+-                  <td className="py-2">{quantity}</td>
+-                  <td
+-                    className={`py-2 ${pnl >= 0 ? "text-gain" : "text-loss"}`}
++                return (
++                  <tr
++                    key={trade.id}
++                    className="transition-colors hover:bg-accent/40"
+                   >
+-                    {pnl >= 0 ? "+" : ""}
+-                    {pnl.toFixed(2)}
+-                  </td>
+-                  <td className="py-2 text-muted-foreground max-w-[150px] truncate font-sans">
+-                  {trade.notes || "—"}
+-                  </td>
+-                  <td className="py-2">
+-                    {screenshotUrls[trade.id] ? (
+-                      <a href={screenshotUrls[trade.id]} target="_blank" rel="noopener noreferrer"> <img src={screenshotUrls[trade.id]} alt="Trade screenshot" className="h-10 w-10 object-cover rounded border border-border"/> </a> ) : (
+-                      "—"
+-                    )}
+-                  </td>
+-
+-                  <td className="py-2 font-sans">
+-                    <div className="flex items-center gap-2">
+-                      <Link href={`/dashboard/trades/${trade.id}`}>
+-                        <Button variant="outline" size="sm">
+-                          View
+-                        </Button>
+-                      </Link>
+-                      <Link href={`/dashboard/trades/${trade.id}/edit`}>
+-                        <Button variant="outline" size="sm" className="gap-1.5">
+-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+-                            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+-                          </svg>
+-                        </Button>
+-                      </Link>
+-                      <form action={deleteTrade.bind(null, trade.id)}>
+-                        <Button type="submit" variant="destructive" size="sm" className="gap-1.5">
+-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+-                            <path d="M3 6h18" />
+-                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+-                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+-                          </svg>
+-                        </Button>
+-                      </form>
+-                    </div>
+-                  </td>
+-                </tr>
+-              );
+-            })}
+-          </tbody>
+-        </table>
++                    <td className="px-4 py-3 font-mono text-muted-foreground">
++                      {trade.date.toLocaleDateString()}
++                    </td>
++                    <td className="px-4 py-3 font-medium uppercase">
++                      {trade.symbol}
++                    </td>
++                    <td className="px-4 py-3">
++                      {trade.tags.map((tag) => (
++                        <span
++                          key={tag.id}
++                          className="mr-1 inline-block rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground"
++                        >
++                          {tag.name}
++                        </span>
++                      ))}
++                    </td>
++                    <td className="px-4 py-3">
++                      <span
++                        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide ${
++                          trade.direction === "LONG"
++                            ? "bg-gain/15 text-gain"
++                            : "bg-loss/15 text-loss"
++                        }`}
++                      >
++                        {trade.direction}
++                      </span>
++                    </td>
++                    <td className="px-4 py-3 font-mono">{entry.toFixed(2)}</td>
++                    <td className="px-4 py-3 font-mono">{exit.toFixed(2)}</td>
++                    <td className="px-4 py-3 font-mono">{quantity}</td>
++                    <td
++                      className={`px-4 py-3 font-mono font-semibold ${
++                        pnl >= 0 ? "text-gain" : "text-loss"
++                      }`}
++                    >
++                      {pnl >= 0 ? "+" : ""}
++                      {pnl.toFixed(2)}
++                    </td>
++                    <td className="max-w-[150px] truncate px-4 py-3 text-muted-foreground">
++                      {trade.notes || "—"}
++                    </td>
++                    <td className="px-4 py-3">
++                      {screenshotUrls[trade.id] ? (
++                        <a
++                          href={screenshotUrls[trade.id]}
++                          target="_blank"
++                          rel="noopener noreferrer"
++                        >
++                          <img
++                            src={screenshotUrls[trade.id]}
++                            alt="Trade screenshot"
++                            className="h-10 w-10 rounded border border-border object-cover"
++                          />
++                        </a>
++                      ) : (
++                        "—"
++                      )}
++                    </td>
++                    <td className="px-4 py-3">
++                      <div className="flex items-center gap-2">
++                        <Link href={`/dashboard/trades/${trade.id}`}>
++                          <Button variant="outline" size="sm">
++                            View
++                          </Button>
++                        </Link>
++                        <Link href={`/dashboard/trades/${trade.id}/edit`}>
++                          <Button variant="outline" size="sm">
++                            <Pencil className="h-3.5 w-3.5" />
++                          </Button>
++                        </Link>
++                        <form action={deleteTrade.bind(null, trade.id)}>
++                          <Button type="submit" variant="destructive" size="sm">
++                            <Trash2 className="h-3.5 w-3.5" />
++                          </Button>
++                        </form>
++                      </div>
++                    </td>
++                  </tr>
++                );
++              })}
++            </tbody>
++          </table>
++        </div>
+       )}
+     </div>
+   );
+-}
+\ No newline at end of file
++}
+diff --git a/components/charts/equity-curve-chart.tsx b/components/charts/equity-curve-chart.tsx
+index 1d354b6..0e105f3 100644
+--- a/components/charts/equity-curve-chart.tsx
++++ b/components/charts/equity-curve-chart.tsx
+@@ -7,13 +7,18 @@ export function EquityCurveChart({ data }: { data: EquityPoint[] }) {
+   return (
+     <ResponsiveContainer width="100%" height={300}>
+       <LineChart data={data}>
+-        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+-        <XAxis dataKey="date" stroke="#888" fontSize={12} />
+-        <YAxis stroke="#888" fontSize={12} />
++        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
++        <XAxis dataKey="date" stroke="var(--muted-foreground)" fontSize={12} />
++        <YAxis stroke="var(--muted-foreground)" fontSize={12} />
+         <Tooltip
+-          contentStyle={{ backgroundColor: "#111", border: "1px solid #333" }}
++          contentStyle={{
++            backgroundColor: "var(--popover)",
++            border: "1px solid var(--border)",
++            borderRadius: "var(--radius-md)",
++            color: "var(--popover-foreground)",
++          }}
+         />
+-        <Line type="monotone" dataKey="equity" stroke="#22c55e" strokeWidth={2} dot={false} />
++        <Line type="monotone" dataKey="equity" stroke="var(--primary)" strokeWidth={2} dot={false} />
+       </LineChart>
+     </ResponsiveContainer>
+   );
+diff --git a/components/charts/win-loss-pie-chart.tsx b/components/charts/win-loss-pie-chart.tsx
+index d75e6a2..a07b7d3 100644
+--- a/components/charts/win-loss-pie-chart.tsx
++++ b/components/charts/win-loss-pie-chart.tsx
+@@ -14,7 +14,7 @@ export function WinLossPieChart({
+     { name: "Losses", value: lossCount },
+   ];
+ 
+-  const COLORS = ["#22c55e", "#ef4444"];
++  const COLORS = ["var(--gain)", "var(--loss)"];
+ 
+   return (
+     <ResponsiveContainer width="100%" height={250}>
+@@ -32,7 +32,14 @@ export function WinLossPieChart({
+             <Cell key={entry.name} fill={COLORS[index]} />
+           ))}
+         </Pie>
+-        <Tooltip contentStyle={{ backgroundColor: "#111", border: "1px solid #333" }} />
++        <Tooltip
++          contentStyle={{
++            backgroundColor: "var(--popover)",
++            border: "1px solid var(--border)",
++            borderRadius: "var(--radius-md)",
++            color: "var(--popover-foreground)",
++          }}
++        />
+         <Legend />
+       </PieChart>
+     </ResponsiveContainer>

@@ -74,11 +74,12 @@ export function Navbar() {
               </Button>
             </Link>
             <Link href="/auth/register" onClick={() => setOpen(false)}>
-              <Button className="w-full">Get started</Button>
+              <Button className="w-full">GET STARTED</Button>
             </Link>
           </div>
         </div>
       )}
     </header>
   );
-}
+} 
+

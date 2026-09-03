@@ -45,41 +45,41 @@ export default async function AnalyticsPage() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Analytics</h2>
+      <h2 className="text-3xl font-bold tracking-tight mb-6">Analytics</h2>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {cards.map((card) => {
-          let color = "text-white";
-          if (card.positive) color = "text-green-500";
-          if (card.negative) color = "text-red-500";
+          let color = "text-foreground";
+          if (card.positive) color = "text-gain";
+          if (card.negative) color = "text-loss";
           if (card.signed) {
             const numericValue = parseFloat(card.value);
-            color = numericValue >= 0 ? "text-green-500" : "text-red-500";
+            color = numericValue >= 0 ? "text-gain" : "text-loss";
           }
 
           return (
-            <div key={card.label} className="border border-gray-800 rounded-lg p-4">
-              <p className="text-sm text-gray-400">{card.label}</p>
-              <p className={`text-2xl font-bold ${color}`}>{card.value}</p>
+            <div key={card.label} className="border border-border bg-card rounded-lg p-4">
+              <p className="text-sm text-muted-foreground">{card.label}</p>
+              <p className={`text-2xl font-bold font-mono ${color}`}>{card.value}</p>
             </div>
           );
         })}
       </div>
 
       <div className="mt-8">
-        <h3 className="text-lg font-semibold mb-4">Equity Curve</h3>
+        <h3 className="text-lg font-semibold tracking-tight mb-4">Equity Curve</h3>
         <EquityCurveChart data={equityCurve} />
       </div>
       <div className="mt-8">
-         <h3 className="text-lg font-semibold mb-4">Win / Loss</h3>
+         <h3 className="text-lg font-semibold tracking-tight mb-4">Win / Loss</h3>
          <WinLossPieChart winCount={stats.winCount} lossCount={stats.lossCount} />
       </div>
       <div className="mt-8">
-        <h3 className="text-lg font-semibold mb-4">Monthly Performance</h3>
+        <h3 className="text-lg font-semibold tracking-tight mb-4">Monthly Performance</h3>
         <MonthlyPerformanceChart data={monthlyPerformance} />
       </div>
 
       <div className="mt-8">
-        <h3 className="text-lg font-semibold mb-4">Daily Performance</h3>
+        <h3 className="text-lg font-semibold tracking-tight mb-4">Daily Performance</h3>
         <PerformanceCalendar dailyData={dailyPerformance} />
       </div>
     </div>
